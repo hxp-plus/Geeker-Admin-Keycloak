@@ -33,6 +33,11 @@ import pinia from "@/stores";
 // errorHandler
 import errorHandler from "@/utils/errorHandler";
 
+// 引入Keycloak
+// 参考：https://github.com/achernetsov/vue-keycloak-template
+import Keycloak, { type KeycloakConfig, type KeycloakInitOptions } from "keycloak-js";
+import { useKeycloakStore } from "@/stores/modules/keycloakStore";
+
 const app = createApp(App);
 
 app.config.errorHandler = errorHandler;
@@ -42,4 +47,44 @@ Object.keys(Icons).forEach(key => {
   app.component(key, Icons[key as keyof typeof Icons]);
 });
 
-app.use(ElementPlus).use(directives).use(router).use(I18n).use(pinia).mount("#app");
+// pinia等组件必须在这里初始化
+app.use(ElementPlus).use(directives).use(router).use(I18n).use(pinia);
+
+let keycloakConfig: KeycloakConfig = {
+  url: import.meta.env.VITE_APP_KEYCLOAK_OPTIONS_URL,
+  realm: import.meta.env.VITE_APP_KEYCLOAK_OPTIONS_REALM,
+  clientId: import.meta.env.VITE_APP_KEYCLOAK_OPTIONS_CLIENTID
+};
+let keycloak = new Keycloak(keycloakConfig);
+const keycloakStore = useKeycloakStore();
+keycloakStore.keycloak = keycloak;
+let initOptions: KeycloakInitOptions = {
+  onLoad: "login-required",
+  enableLogging: true,
+  responseMode: "query" // 参考：https://github.com/keycloak/keycloak/issues/14742
+};
+keycloak.init(initOptions).then(auth => {
+  if (!auth) {
+    console.warn("Authentication failed");
+  } else {
+    console.log("Authenticated");
+    keycloak.loadUserInfo().then(() => {
+      app.mount("#app");
+    });
+  }
+  //Token Refresh
+  setInterval(() => {
+    keycloak
+      .updateToken(70)
+      .then(refreshed => {
+        if (refreshed) {
+          console.log("Token refreshed");
+        } else {
+          console.warn("Token not refreshed");
+        }
+      })
+      .catch(() => {
+        console.error("Failed to refresh token");
+      });
+  }, 6000);
+});
