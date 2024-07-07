@@ -1,0 +1,51 @@
+---
+networks:
+  geeker-admin:
+    driver: bridge
+    name: geeker-admin
+services:
+  keycloak:
+    command: start-dev
+    container_name: geeker-admin-keycloak
+    depends_on:
+      - mysql
+    environment:
+      KC_DB: mysql
+      KC_DB_PASSWORD: MyKeycloakMySQLPassword
+      KC_DB_URL: jdbc:mysql://mysql:3306/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_HEALTH_ENABLED: true
+      KC_HOSTNAME: 172.21.1.56
+      KC_HOSTNAME_PORT: 8085
+      KC_HOSTNAME_STRICT_BACKCHANNEL: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    expose:
+      - 8080
+    image: quay.io/keycloak/keycloak:24.0
+    networks:
+      - geeker-admin
+    ports:
+      - 8085:8080
+    restart: always
+  mysql:
+    container_name: geeker-admin-mysql
+    environment:
+      MYSQL_DATABASE: keycloak
+      MYSQL_PASSWORD: MyKeycloakMySQLPassword
+      MYSQL_ROOT_PASSWORD: MyRootPassword
+      MYSQL_USER: keycloak
+    expose:
+      - 3306
+    image: mysql:8.0
+    networks:
+      - geeker-admin
+    restart: always
+    volumes:
+      - mysql:/var/lib/mysql
+volumes:
+  mysql:
+    driver: local
+    name: geeker-admin-mysql
