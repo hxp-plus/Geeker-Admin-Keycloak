@@ -47,9 +47,10 @@ Object.keys(Icons).forEach(key => {
   app.component(key, Icons[key as keyof typeof Icons]);
 });
 
-// pinia等组件必须在这里初始化
-app.use(ElementPlus).use(directives).use(router).use(I18n).use(pinia);
+// pinia等组件必须在这里初始化，以存储Keycloak的信息
+app.use(ElementPlus).use(directives).use(I18n).use(pinia);
 
+// Keycloak初始化
 let keycloakConfig: KeycloakConfig = {
   url: import.meta.env.VITE_APP_KEYCLOAK_OPTIONS_URL,
   realm: import.meta.env.VITE_APP_KEYCLOAK_OPTIONS_REALM,
@@ -59,7 +60,7 @@ let keycloak = new Keycloak(keycloakConfig);
 const keycloakStore = useKeycloakStore();
 keycloakStore.keycloak = keycloak;
 let initOptions: KeycloakInitOptions = {
-  onLoad: "login-required",
+  onLoad: import.meta.env.VITE_APP_KEYCLOAK_OPTIONS_ONLOAD,
   enableLogging: true,
   responseMode: "query" // 参考：https://github.com/keycloak/keycloak/issues/14742
 };
@@ -68,11 +69,12 @@ keycloak.init(initOptions).then(auth => {
     console.warn("Authentication failed");
   } else {
     console.log("Authenticated");
-    keycloak.loadUserInfo().then(() => {
-      app.mount("#app");
-    });
   }
-  //Token Refresh
+  // router必须在Keycloak就绪后加载，否则路由的时候就不能判断Keycloak是否已经登录。
+  app.use(router);
+  // app必须在Keycloak就绪后被mount
+  app.mount("#app");
+  // 设置定时器来刷新Token
   setInterval(() => {
     keycloak
       .updateToken(70)

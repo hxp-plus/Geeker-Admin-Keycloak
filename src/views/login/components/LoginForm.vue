@@ -24,6 +24,9 @@
     <el-button :icon="UserFilled" round size="large" type="primary" :loading="loading" @click="login(loginFormRef)">
       登录
     </el-button>
+    <el-button :icon="UserFilled" round size="large" type="primary" :loading="loading" @click="keycloak_login()">
+      使用 Keycloak 登录
+    </el-button>
   </div>
 </template>
 
@@ -42,11 +45,13 @@ import { initDynamicRouter } from "@/routers/modules/dynamicRouter";
 import { CircleClose, UserFilled } from "@element-plus/icons-vue";
 import type { ElForm } from "element-plus";
 import md5 from "md5";
+import { useKeycloakStore } from "@/stores/modules/keycloakStore";
 
 const router = useRouter();
 const userStore = useUserStore();
 const tabsStore = useTabsStore();
 const keepAliveStore = useKeepAliveStore();
+const keycloakStore = useKeycloakStore();
 
 type FormInstance = InstanceType<typeof ElForm>;
 const loginFormRef = ref<FormInstance>();
@@ -91,6 +96,11 @@ const login = (formEl: FormInstance | undefined) => {
       loading.value = false;
     }
   });
+};
+
+const keycloak_login = () => {
+  keycloakStore.keycloak?.login();
+  keycloakStore.keycloak?.loadUserInfo();
 };
 
 // resetForm

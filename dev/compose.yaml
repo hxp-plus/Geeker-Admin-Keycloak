@@ -15,7 +15,7 @@ services:
       KC_DB_URL: jdbc:mysql://mysql:3306/keycloak
       KC_DB_USERNAME: keycloak
       KC_HEALTH_ENABLED: true
-      KC_HOSTNAME: 172.21.1.56
+      KC_HOSTNAME: 172.21.1.68
       KC_HOSTNAME_PORT: 8085
       KC_HOSTNAME_STRICT_BACKCHANNEL: false
       KC_HOSTNAME_STRICT_HTTPS: false
